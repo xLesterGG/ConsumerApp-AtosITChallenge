@@ -24,7 +24,7 @@ public class MainActivity extends AppCompatActivity {
         RequestQueue queue = Volley.newRequestQueue(this);
 
         String accNum = "NXT-2N9Y-MQ6D-WAAS-G88VH";
-        final String url =  "http://localhost:6876/nxt?=%2Fnxt&requestType=getBlockchainTransactions&account=" + accNum;
+        final String url =  "http://174.140.168.136:6876/nxt?=%2Fnxt&requestType=getBlockchainTransactions&account=" + accNum;
 
         JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, url, (String)null,
                 new Response.Listener<JSONObject>()
@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(JSONObject response) {
                         // display response
-                        //Log.d("Response", response.toString());
+                        Log.d("Response", response.toString());
 
                         try{
                             JSONArray transactionArray = response.getJSONArray("transactions");  // extract transactions
@@ -40,15 +40,23 @@ public class MainActivity extends AppCompatActivity {
                             String[] messagesArray = new String[transactionArray.length()]; // array to store raw messages
 
                             for(int i=0;i<transactionArray.length();i++){
-                                messagesArray[i] = transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message"); //getting raw messages from transactions
+                                if(transactionArray.getJSONObject(i).getJSONObject("attachment").has("message")){
+                                    Log.d("aaa", transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message").toString());
+
+                                    messagesArray[i] = transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message").toString(); //getting raw messages from transactions
+                                }
                             }
 
                             JSONArray processedMessages = new JSONArray();
 
-                            for(int j=0;j<messagesArray.length;j++){
-                                processedMessages.put(new JSONObject(messagesArray[j])); //turn text json into proper json
+//                            for(int j=0;j<messagesArray.length;j++){
+//                                processedMessages.put(new JSONObject(messagesArray[j])); //turn text json into proper json
+//
+//                            }
 
-                            }
+                            processedMessages.put(new JSONObject(messagesArray[5]));
+
+                            Log.d("asdasd",processedMessages.toString());
 
                             //get location cert
                             //decrypt hash
