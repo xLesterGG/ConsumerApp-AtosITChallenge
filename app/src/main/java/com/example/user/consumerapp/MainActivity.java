@@ -1,5 +1,6 @@
 package com.example.user.consumerapp;
 
+import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,6 +14,9 @@ import com.android.volley.toolbox.Volley;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.io.File;
+import java.security.PublicKey;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -37,13 +41,30 @@ public class MainActivity extends AppCompatActivity {
                         try{
                             JSONArray transactionArray = response.getJSONArray("transactions");  // extract transactions
 
-                            String[] messagesArray = new String[transactionArray.length()]; // array to store raw messages
+                          //  String[] messagesArray = new String[transactionArray.length()]; // array to store raw messages
 
-                            for(int i=0;i<transactionArray.length();i++){
+                            JSONArray msgArray = new JSONArray();
+
+                            //for(int i=0;i<transactionArray.length();i++){
+                            for(int i=0;i<3;i++){
+
                                 if(transactionArray.getJSONObject(i).getJSONObject("attachment").has("message")){
-                                    Log.d("aaa", transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message").toString());
 
-                                    messagesArray[i] = transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message").toString(); //getting raw messages from transactions
+                                    JSONObject h2 = new JSONObject(transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message")); // stringed json
+                                    JSONObject h1 = new JSONObject(transactionArray.getJSONObject(i+1).getJSONObject("attachment").getString("message"));
+
+                                    JSONObject message = new JSONObject(transactionArray.getJSONObject(i+2).getJSONObject("attachment").getString("message"));
+                                    message.put("encryptedHash",h1.getString("encryptedHash1")+h2.getString("encryptedHash2"));
+
+                                    i=i+2;
+
+                                    Log.d("msg",message.toString());
+
+
+
+                                   // Log.d("aaa", h1);
+
+                                    //messagesArray[i] = transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message").toString(); //getting raw messages from transactions
                                 }
                             }
 
@@ -54,13 +75,46 @@ public class MainActivity extends AppCompatActivity {
 //
 //                            }
 
-                            processedMessages.put(new JSONObject(messagesArray[5]));
+                          // processedMessages.put(new JSONObject(messagesArray[5]));
 
-                            Log.d("asdasd",processedMessages.toString());
+                           // Log.d("asdasd",processedMessages.toString());
 
-                            //get location cert
-                            //decrypt hash
-                            //hash readable loc + time and compare
+
+//                            for(int j=0;j<processedMessages.length();j++){
+//
+//                                //get location cert
+//                                //decrypt hash
+//                                //hash readable loc + time and compare
+//
+//                                String encyptedHash = processedMessages.getJSONObject(j).getString("encrypted");
+//                                Log.d("encrypted hash",encyptedHash);
+//
+//                                String unhashedData = processedMessages.getJSONObject(j).getString("something");
+//                                Log.d("encrypted hash",unhashedData);
+//
+//                                VerifyHash vh = new VerifyHash();
+//                                String temp = Environment.getExternalStorageDirectory().getPath()+"/"+ processedMessages.getJSONObject(j).getString("locationcode")+".pem";
+//                                temp.replaceAll("\\s"," ");
+//
+//                                //some download code
+//
+//                                File f = new File(temp);
+//                                if(f.exists())
+//                                {
+//                                    String filePath=f.toString();
+//                                    PublicKey key = vh.ReadPemFile(filePath);
+//                                    String decryptedhash = vh.DecryptHash(key,encyptedHash);
+//                                    String rehash = vh.hashStringWithSHA(unhashedData);
+//                                    Boolean verified = vh.CompareHash(decryptedhash,rehash);
+//
+//                                    Log.d("rehash", rehash);
+//                                    Log.d("decryptedhash", decryptedhash);
+//
+//
+//                                    //verResult.setText("Verify Result: "+verified);
+//                                }
+//
+//                            }
 
 
 
