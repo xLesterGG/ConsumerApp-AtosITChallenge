@@ -46,29 +46,46 @@ public class MainActivity extends AppCompatActivity {
                             JSONArray msgArray = new JSONArray();
 
                             //for(int i=0;i<transactionArray.length();i++){
-                            for(int i=0;i<3;i++){
+                            for(int i=0;i<4;i++){
 
                                 if(transactionArray.getJSONObject(i).getJSONObject("attachment").has("message")){
 
-                                    JSONObject h2 = new JSONObject(transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message")); // stringed json
-                                    JSONObject h1 = new JSONObject(transactionArray.getJSONObject(i+1).getJSONObject("attachment").getString("message"));
+                                    JSONObject hash3 = new JSONObject(transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message")); // stringed json
+                                    if(hash3.has("encryptedHash3")){
+                                        String h3 = hash3.getString("encryptedHash3");
+                                        i = i+1;
 
-                                    JSONObject message = new JSONObject(transactionArray.getJSONObject(i+2).getJSONObject("attachment").getString("message"));
-                                    message.put("encryptedHash",h1.getString("encryptedHash1")+h2.getString("encryptedHash2"));
+                                        JSONObject hash2 = new JSONObject(transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message"));
+                                        if(hash2.has("encryptedHash2")){
+                                            String h2 = hash2.getString("encryptedHash2");
+                                            i = i+1;
 
-                                    i=i+2;
+                                            JSONObject hash1 = new JSONObject(transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message"));
+                                            if(hash1.has("encryptedHash1")){
+                                                String h1 = hash1.getString("encryptedHash1");
+                                                i = i+1;
 
-                                    Log.d("msg",message.toString());
+                                                JSONObject message = new JSONObject(transactionArray.getJSONObject(i+2).getJSONObject("attachment").getString("message"));
+                                                message.put("encryptedHash",h1+h2+h3);
+                                                Log.d("msg",message.toString());
 
-
-
-                                   // Log.d("aaa", h1);
-
-                                    //messagesArray[i] = transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message").toString(); //getting raw messages from transactions
+                                                msgArray.put(message);
+                                            }
+                                        }
+                                    }
                                 }
                             }
 
-                            JSONArray processedMessages = new JSONArray();
+
+                            Log.d("asdasd",msgArray.toString());
+
+                            for(int j=0;j<msgArray.length();j++){
+                                // decrypt and shit here
+
+
+                            }
+
+
 
 //                            for(int j=0;j<messagesArray.length;j++){
 //                                processedMessages.put(new JSONObject(messagesArray[j])); //turn text json into proper json
