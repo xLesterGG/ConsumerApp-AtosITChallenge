@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(JSONObject response) {
                         // display response
-                        Log.d("Response", response.toString());
+                       // Log.d("Response", response.toString());
 
                         try{
                             JSONArray transactionArray = response.getJSONArray("transactions");  // extract transactions
@@ -53,6 +53,8 @@ public class MainActivity extends AppCompatActivity {
                                     JSONObject hash3 = new JSONObject(transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message")); // stringed json
                                     if(hash3.has("encryptedHash3")){
                                         String h3 = hash3.getString("encryptedHash3");
+
+
                                         i = i+1;
 
                                         JSONObject hash2 = new JSONObject(transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message"));
@@ -65,11 +67,11 @@ public class MainActivity extends AppCompatActivity {
                                                 String h1 = hash1.getString("encryptedHash1");
                                                 i = i+1;
 
-                                                JSONObject message = new JSONObject(transactionArray.getJSONObject(i+2).getJSONObject("attachment").getString("message"));
-                                                message.put("encryptedHash",h1+h2+h3);
-                                                Log.d("msg",message.toString());
+                                                JSONObject message = new JSONObject(transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message"));
+                                                message.put("unhashedData",new JSONObject(message.getString("unhashedData"))); // turn string into json
+                                                message.put("encryptedHash",h1+h2+h3);            // concat the hash
 
-                                                msgArray.put(message);
+                                                msgArray.put(message);  // add processed message into an array
                                             }
                                         }
                                     }
@@ -78,9 +80,19 @@ public class MainActivity extends AppCompatActivity {
 
 
                             Log.d("asdasd",msgArray.toString());
+                            String b;
 
                             for(int j=0;j<msgArray.length();j++){
                                 // decrypt and shit here
+
+                               // JSONObject unhashedData = msgArray.getJSONObject(j)
+                                String bid = msgArray.getJSONObject(j).getString("batchID");
+                                String movement = msgArray.getJSONObject(j).getString("movement");
+                                String unhashedData = msgArray.getJSONObject(j).getString("unhashedData");
+                                String encryptedHash = msgArray.getJSONObject(j).getString("encryptedHash");
+
+                                String dateTime = msgArray.getJSONObject(j).getJSONObject("unhashedData").getString("currentDateTime");
+                                String location = msgArray.getJSONObject(j).getJSONObject("unhashedData").getString("location");
 
 
                             }
