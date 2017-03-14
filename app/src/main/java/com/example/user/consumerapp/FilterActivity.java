@@ -38,8 +38,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class FilterActivity extends AppCompatActivity {
-    String encryptedHash,unhashedData,batchID,nxtAccNum,productName;
-    int counter;
+    String batchID,nxtAccNum,productName;
     JSONArray msgArray;
     LinearLayout linearLayout;
     RequestQueue queue;
@@ -57,7 +56,7 @@ public class FilterActivity extends AppCompatActivity {
         productName = intent.getStringExtra("productName");
         batchID = intent.getStringExtra("batchID");
       //  Log.d("batch",batchID);
-        pDialog = new ProgressDialog(this);
+        //pDialog = new ProgressDialog(this);
 
         linearLayout = (LinearLayout)findViewById(R.id.activity_filter);
         queue = Volley.newRequestQueue(this);
@@ -67,7 +66,6 @@ public class FilterActivity extends AppCompatActivity {
 
     public void filterChain(String accNum, final String batchID){
         Log.d("func","da");
-        pDialog.setMessage("Filtering chain...");
         String nxtUrl = url+accNum;
         JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, nxtUrl, (String)null,
                 new Response.Listener<JSONObject>()
@@ -83,7 +81,7 @@ public class FilterActivity extends AppCompatActivity {
 
                             msgArray = new JSONArray();
 ///transactionArray.length()
-                            for(int i=4;i<12;i++){
+                            for(int i=0;i<12;i++){
                                 // for(int i=0;i<4;i++){
                               //  Log.d("aaa",transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message"));
 
@@ -122,47 +120,10 @@ public class FilterActivity extends AppCompatActivity {
                                 }
                             }
 
-
+                            //download certfile
+                            DownloadFile dl = new DownloadFile();
+                            dl.execute(msgArray);
                             Log.d("asdasd",msgArray.toString());
-                            counter=0;
-                            for(int j=0;j<msgArray.length();j++){
-                                counter++;
-
-                                Log.d("DECRYPT THIS", msgArray.getJSONObject(j).toString());
-                                // decrypt and shit here
-
-                                // JSONObject unhashedData = msgArray.getJSONObject(j)
-                                //String bid = msgArray.getJSONObject(j).getString("batchID");
-
-
-                                String movement = msgArray.getJSONObject(j).getString("movement");
-                                unhashedData = msgArray.getJSONObject(j).getString("unhashedData");
-                                encryptedHash = msgArray.getJSONObject(j).getString("encryptedHash");
-
-                                //String dateTime = msgArray.getJSONObject(j).getJSONObject("unhashedData").getString("currentDateTime");
-                                String location = msgArray.getJSONObject(j).getJSONObject("unhashedData").getString("location");
-
-                                //open txt database
-                                //get location cert url and name
-                                String txtContent = readRawTextFile(getApplicationContext(),R.raw.database);
-                                try {
-                                    JSONObject database = new JSONObject(txtContent);
-                                    JSONObject locationJson = new JSONObject(database.getString(location));
-                                    String locationName = locationJson.getString("Name");
-                                    String certUrl = locationJson.getString("CertUrl");
-
-                                    //download certfile
-                                    DownloadFile dl = new DownloadFile();
-
-
-                                    dl.execute(locationName,certUrl);
-
-                                    Log.d("Url", locationJson.getString("CertUrl"));
-                                    Log.d("Name", locationJson.getString("Name"));
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
-                                }
-                            }
 
                         }catch (Exception e){
                             e.printStackTrace();
@@ -182,16 +143,13 @@ public class FilterActivity extends AppCompatActivity {
         queue.add(getRequest);
     }
 
-    class DownloadFile extends AsyncTask<String,String,String> //params,progress,result
+    class DownloadFile extends AsyncTask<JSONArray,String,String[]> //params,progress,result
     {
         ProgressDialog loading;
-        //String FILE_URL="https://www.dropbox.com/s/lwyu892bezx3pb4/Btu.pem?raw=1";
-        //String FILE_URL2="https://www.dropbox.com/s/4ucg8810dmhzwij/Kch.pem?raw=1";
-        //String FILE_URL3="https://www.dropbox.com/s/yqucpkhhh4tw7jk/Mri.pem?raw=1";
-        //String FILE_Name[]= {"BTU200"};
         String temp;
-        String location;
-
+        String[] unhashedData;
+        String[] encryptedHash;
+        String [] location;
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
@@ -199,106 +157,120 @@ public class FilterActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(String result){
+        protected void onPostExecute(String[] result){
 
-            if(counter==(msgArray.length()-1)){
-                pDialog.dismiss();
-            }
-
-            //filePath=result;
-            File f = null;
+            File cert= null;
 
             if(result!=null){
                 Toast.makeText(getApplicationContext(), "Download/Get Certs successfully", Toast.LENGTH_SHORT).show();
-                f = new File(result);
+                for(int i=0;i<result.length;i++){
+                    cert = new File(result[i]);
+
+                    //verify hash
+                    VerifyHash vh = new VerifyHash();
+                    PublicKey key;
+                    String decryptedhash = null;
+                    String rehash = null;
+
+                    try {
+                        key = vh.ReadPemFile(cert.toString());
+                        decryptedhash = vh.DecryptHash(key, encryptedHash[i]);
+                        rehash = vh.hashStringWithSHA(unhashedData[i]);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    Boolean verified = vh.CompareHash(decryptedhash, rehash);
+                    //pDialog.dismiss();
+
+                    //if hash unchanged
+                    if(verified){
+                        TextView textView = new TextView(FilterActivity.this);
+                        textView.setText(location[i]);
+                        Log.d("verified","aa");
+                        linearLayout.addView(textView);
+                    }else{
+                        Toast.makeText(getApplicationContext(), "Failed to verify location", Toast.LENGTH_SHORT).show();
+                    }
+                }
             }else{
                 Toast.makeText(getApplicationContext(), "System Error Occured", Toast.LENGTH_SHORT).show();
-            }
-
-            //verify hash
-            VerifyHash vh = new VerifyHash();
-            PublicKey key = null;
-
-            try {
-                key = vh.ReadPemFile(f.toString());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            String decryptedhash = null;
-            try {
-                decryptedhash = vh.DecryptHash(key, encryptedHash);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            String rehash = null;
-            try {
-                rehash = vh.hashStringWithSHA(unhashedData);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            Boolean verified = vh.CompareHash(decryptedhash, rehash);
-
-            //if hash unchanged
-            if(verified){
-                TextView textView = new TextView(FilterActivity.this);
-                textView.setText(location);
-                Log.d("verified",location);
-                linearLayout.addView(textView);
-            }else{
-                Toast.makeText(getApplicationContext(), "Failed to verify location", Toast.LENGTH_SHORT).show();
             }
 
             loading.dismiss();
         }
 
         @Override
-        protected String doInBackground(String... downloadParams) {
+        protected String[] doInBackground(JSONArray... downloadParams) {
             int readBytes;
-            String path=null;
-            location = downloadParams[0];
+            JSONArray filteredJson = downloadParams[0];
+            String path[]= new String[filteredJson.length()];
+            unhashedData = new String[filteredJson.length()];
+            encryptedHash = new String[filteredJson.length()];
+            location = new String[filteredJson.length()];
 
-            Log.d("trying to download", location);
-
-            temp = getApplicationContext().getFilesDir() + "/" + downloadParams[0] + ".pem";
-            temp.replaceAll("\\s", " ");
-            File f = new File(temp);
-            if (f.exists()) {
-                Log.d("fileexist", "yes");
-                path = f.toString();
-            } else {
+            for(int j=0;j<filteredJson.length();j++) {
                 try {
-                    URL url = new URL(downloadParams[1]);
-                    URLConnection connection = url.openConnection();
+                    unhashedData[j] = filteredJson.getJSONObject(j).getString("unhashedData");
+                    encryptedHash[j] = filteredJson.getJSONObject(j).getString("encryptedHash");
 
-                    long fileLength = connection.getContentLength();
-                    InputStream input = new BufferedInputStream(url.openStream(), 10 * 1024);
+                    //String dateTime = msgArray.getJSONObject(j).getJSONObject("unhashedData").getString("currentDateTime");
+                    location [j] = filteredJson.getJSONObject(j).getJSONObject("unhashedData").getString("location");
 
-                    OutputStream output = new FileOutputStream(temp);
-                    byte data[] = new byte[1024];
-                    long totalBytes = 0;
+                    //open txt database
+                    // get location cert url and name
+                    String txtContent = readRawTextFile(getApplicationContext(),R.raw.database);
+                    JSONObject database = new JSONObject(txtContent);
+                    JSONObject locationJson = new JSONObject(database.getString(location[j]));
+                    String locationName = locationJson.getString("Name");
+                    String certUrl = locationJson.getString("CertUrl");
+                    Log.d("Url", locationJson.getString("CertUrl"));
+                    Log.d("Name", locationJson.getString("Name"));
 
-                    while ((readBytes = input.read(data)) != -1) {
-                        totalBytes = totalBytes + readBytes;
-                        Long percentage = (totalBytes * 100) / fileLength;
-                        publishProgress(String.valueOf(percentage));
-                        output.write(data, 0, readBytes);
+                    //download operation
+                    temp = getApplicationContext().getFilesDir() + "/" + locationName + ".pem";
+                    temp.replaceAll("\\s", " ");
+                    File certfile = new File(temp);
+
+                    if (certfile.exists()) {
+                        Log.d("fileexist", "yes");
+                        path[j] = certfile.toString();
+                    } else {
+                        try {
+                            URL url = new URL(certUrl);
+                            URLConnection connection = url.openConnection();
+
+                            long fileLength = connection.getContentLength();
+                            InputStream input = new BufferedInputStream(url.openStream(), 10 * 1024);
+
+                            OutputStream output = new FileOutputStream(temp);
+                            byte data[] = new byte[1024];
+                            long totalBytes = 0;
+
+                            while ((readBytes = input.read(data)) != -1) {
+                                totalBytes = totalBytes + readBytes;
+                                Long percentage = (totalBytes * 100) / fileLength;
+                                publishProgress(String.valueOf(percentage));
+                                output.write(data, 0, readBytes);
+                            }
+
+                            output.flush();
+                            output.close();
+                            input.close();
+
+                            //check if file downloaded
+                            if(certfile.exists()){
+                                path[j] = temp;
+                                Log.d("path created?", path[1]);
+                            }
+                        } catch (Exception e) {
+                            Log.d("Error", e.getMessage());
+                        }
                     }
-
-                    output.flush();
-                    output.close();
-                    input.close();
-
-                    //check if file downloaded
-                    if(f.exists()){
-                        path = temp;
-                        Log.d("path created?", path);
-                    }
-                } catch (Exception e) {
-                    Log.d("Error", e.getMessage());
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
             }
-            Log.d("PATH RETURNED", path);
             return path;
         }
     }
