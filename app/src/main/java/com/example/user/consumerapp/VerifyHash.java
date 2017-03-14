@@ -1,5 +1,8 @@
 package com.example.user.consumerapp;
 
+import android.os.Handler;
+import android.util.Log;
+
 import org.bouncycastle.openssl.PEMReader;
 
 import java.io.FileReader;
@@ -24,14 +27,18 @@ public class VerifyHash {
     }
 
     public PublicKey ReadPemFile(String path) throws Exception {
+
         PEMReader reader = new PEMReader(new FileReader(path));
         Object pemObject = reader.readObject();
+
+        Log.d("using", path);
         if (pemObject instanceof X509Certificate) {
             X509Certificate cert = (X509Certificate)pemObject;
             cert.checkValidity();
             return cert.getPublicKey();
         }
         return null;
+
     }
 
     public String hashStringWithSHA(String json) throws Exception{

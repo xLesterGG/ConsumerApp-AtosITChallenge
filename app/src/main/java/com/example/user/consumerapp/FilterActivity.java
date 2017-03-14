@@ -4,6 +4,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -33,6 +34,8 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.PublicKey;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class FilterActivity extends AppCompatActivity {
     String encryptedHash,unhashedData,batchID,nxtAccNum,productName;
@@ -53,7 +56,7 @@ public class FilterActivity extends AppCompatActivity {
         nxtAccNum = intent.getStringExtra("nxtAccNum");
         productName = intent.getStringExtra("productName");
         batchID = intent.getStringExtra("batchID");
-        Log.d("batch",batchID);
+      //  Log.d("batch",batchID);
         pDialog = new ProgressDialog(this);
 
         linearLayout = (LinearLayout)findViewById(R.id.activity_filter);
@@ -79,9 +82,10 @@ public class FilterActivity extends AppCompatActivity {
                             //  String[] messagesArray = new String[transactionArray.length()]; // array to store raw messages
 
                             msgArray = new JSONArray();
-
-                            for(int i=0;i<transactionArray.length();i++){
+///transactionArray.length()
+                            for(int i=4;i<12;i++){
                                 // for(int i=0;i<4;i++){
+                              //  Log.d("aaa",transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message"));
 
                                 if(transactionArray.getJSONObject(i).getJSONObject("attachment").has("message")){
 
@@ -123,10 +127,14 @@ public class FilterActivity extends AppCompatActivity {
                             counter=0;
                             for(int j=0;j<msgArray.length();j++){
                                 counter++;
+
+                                Log.d("DECRYPT THIS", msgArray.getJSONObject(j).toString());
                                 // decrypt and shit here
 
                                 // JSONObject unhashedData = msgArray.getJSONObject(j)
                                 //String bid = msgArray.getJSONObject(j).getString("batchID");
+
+
                                 String movement = msgArray.getJSONObject(j).getString("movement");
                                 unhashedData = msgArray.getJSONObject(j).getString("unhashedData");
                                 encryptedHash = msgArray.getJSONObject(j).getString("encryptedHash");
@@ -145,6 +153,8 @@ public class FilterActivity extends AppCompatActivity {
 
                                     //download certfile
                                     DownloadFile dl = new DownloadFile();
+
+
                                     dl.execute(locationName,certUrl);
 
                                     Log.d("Url", locationJson.getString("CertUrl"));
@@ -153,56 +163,6 @@ public class FilterActivity extends AppCompatActivity {
                                     e.printStackTrace();
                                 }
                             }
-
-
-
-//                            for(int j=0;j<messagesArray.length;j++){
-//                                processedMessages.put(new JSONObject(messagesArray[j])); //turn text json into proper json
-//
-//                            }
-
-                            // processedMessages.put(new JSONObject(messagesArray[5]));
-
-                            // Log.d("asdasd",processedMessages.toString());
-
-
-//                            for(int j=0;j<processedMessages.length();j++){
-//
-//                                //get location cert
-//                                //decrypt hash
-//                                //hash readable loc + time and compare
-//
-//                                String encyptedHash = processedMessages.getJSONObject(j).getString("encrypted");
-//                                Log.d("encrypted hash",encyptedHash);
-//
-//                                String unhashedData = processedMessages.getJSONObject(j).getString("something");
-//                                Log.d("encrypted hash",unhashedData);
-//
-//                                VerifyHash vh = new VerifyHash();
-//                                String temp = Environment.getExternalStorageDirectory().getPath()+"/"+ processedMessages.getJSONObject(j).getString("locationcode")+".pem";
-//                                temp.replaceAll("\\s"," ");
-//
-//                                //some download code
-//
-//                                File f = new File(temp);
-//                                if(f.exists())
-//                                {
-//                                    String filePath=f.toString();
-//                                    PublicKey key = vh.ReadPemFile(filePath);
-//                                    String decryptedhash = vh.DecryptHash(key,encyptedHash);
-//                                    String rehash = vh.hashStringWithSHA(unhashedData);
-//                                    Boolean verified = vh.CompareHash(decryptedhash,rehash);
-//
-//                                    Log.d("rehash", rehash);
-//                                    Log.d("decryptedhash", decryptedhash);
-//
-//
-//                                    //verResult.setText("Verify Result: "+verified);
-//                                }
-//
-//                            }
-
-
 
                         }catch (Exception e){
                             e.printStackTrace();
@@ -283,6 +243,7 @@ public class FilterActivity extends AppCompatActivity {
             if(verified){
                 TextView textView = new TextView(FilterActivity.this);
                 textView.setText(location);
+                Log.d("verified",location);
                 linearLayout.addView(textView);
             }else{
                 Toast.makeText(getApplicationContext(), "Failed to verify location", Toast.LENGTH_SHORT).show();
@@ -296,6 +257,8 @@ public class FilterActivity extends AppCompatActivity {
             int readBytes;
             String path=null;
             location = downloadParams[0];
+
+            Log.d("trying to download", location);
 
             temp = getApplicationContext().getFilesDir() + "/" + downloadParams[0] + ".pem";
             temp.replaceAll("\\s", " ");
@@ -335,6 +298,7 @@ public class FilterActivity extends AppCompatActivity {
                     Log.d("Error", e.getMessage());
                 }
             }
+            Log.d("PATH RETURNED", path);
             return path;
         }
     }
