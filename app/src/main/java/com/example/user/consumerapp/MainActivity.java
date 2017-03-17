@@ -4,10 +4,13 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import org.json.JSONObject;
@@ -16,6 +19,9 @@ import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
 public class MainActivity extends AppCompatActivity {
+
+    ImageView imgScan;
+    boolean doubleBackToExitPressedOnce = false;
 
     //Request external storage
     private static final int REQUEST_EXTERNAL_STORAGE = 1;
@@ -31,8 +37,34 @@ public class MainActivity extends AppCompatActivity {
 
         verifyStoragePermissions(MainActivity.this);
 
-        IntentIntegrator integrator = new IntentIntegrator(MainActivity.this);
-        integrator.initiateScan(); // intent to open external qr app
+        imgScan = (ImageView) findViewById(R.id.scanIcon);
+        imgScan.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                IntentIntegrator integrator = new IntentIntegrator(MainActivity.this);
+                integrator.initiateScan(); // intent to open external qr app
+            }
+        });
+    }
+
+    //double click back to exit
+    @Override
+    public void onBackPressed() {
+        if (doubleBackToExitPressedOnce) {
+            super.onBackPressed();
+            return;
+        }
+
+        this.doubleBackToExitPressedOnce = true;
+        Toast.makeText(this, "Press back again to exit", Toast.LENGTH_SHORT).show();
+
+        new Handler().postDelayed(new Runnable() {
+
+            @Override
+            public void run() {
+                doubleBackToExitPressedOnce=false;
+            }
+        }, 2000);
     }
 
     @Override

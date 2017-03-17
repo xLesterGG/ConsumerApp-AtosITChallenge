@@ -2,13 +2,25 @@ package com.example.user.consumerapp;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.AssetManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.BitmapDrawable;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
-import android.os.Handler;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
-import android.widget.LinearLayout;
+import android.util.TypedValue;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,16 +46,20 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.PublicKey;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class FilterActivity extends AppCompatActivity {
     String batchID,nxtAccNum,productName;
     JSONArray msgArray;
-    LinearLayout linearLayout;
+    RelativeLayout relativeLayout;
     RequestQueue queue;
 
+    //Connectivity checking
+    ConnectivityManager connectivityManager;
+    NetworkInfo activeNetworkInfo;
+
     final String url =  "http://174.140.168.136:6876/nxt?=%2Fnxt&requestType=getBlockchainTransactions&account=";
+
+    public static AlertDialog ConnectionAlert=null;
     private ProgressDialog pDialog;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,18 +71,39 @@ public class FilterActivity extends AppCompatActivity {
         nxtAccNum = intent.getStringExtra("nxtAccNum");
         productName = intent.getStringExtra("productName");
         batchID = intent.getStringExtra("batchID");
-      //  Log.d("batch",batchID);
-        //pDialog = new ProgressDialog(this);
+        pDialog = new ProgressDialog(FilterActivity.this);
 
-        linearLayout = (LinearLayout)findViewById(R.id.activity_filter);
+        relativeLayout = (RelativeLayout) findViewById(R.id.activity_filter);
         queue = Volley.newRequestQueue(this);
 
-        filterChain(nxtAccNum,batchID);
+        //initialize dialog 1 - connect to network for action
+        AlertDialog.Builder builder = new AlertDialog.Builder(FilterActivity.this);
+        builder.setMessage("Please connect to network and try again")
+                .setCancelable(false)
+                .setNegativeButton("Ok", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        finish();
+                    }
+                });
+        ConnectionAlert = builder.create();
+        ConnectionAlert.setCanceledOnTouchOutside(false);
+
+        if(isNetworkAvailable()){
+            filterChain(nxtAccNum,batchID);
+        }else{
+            ConnectionAlert.show();
+        }
     }
 
     public void filterChain(String accNum, final String batchID){
-        Log.d("func","da");
         String nxtUrl = url+accNum;
+
+        // Showing progress dialog before making http request
+        pDialog.setMessage("Getting data from blockchain...");
+        //pDialog.setCanceledOnTouchOutside(false);
+        pDialog.setCancelable(false);
+        pDialog.show();
+
         JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, nxtUrl, (String)null,
                 new Response.Listener<JSONObject>()
                 {
@@ -135,6 +172,8 @@ public class FilterActivity extends AppCompatActivity {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         Log.d("Error.Response", error.toString());
+                        Toast.makeText(FilterActivity.this, "Connection timeout", Toast.LENGTH_SHORT).show();
+                        pDialog.dismiss();
                     }
                 }
         );
@@ -145,26 +184,58 @@ public class FilterActivity extends AppCompatActivity {
 
     class DownloadFile extends AsyncTask<JSONArray,String,String[]> //params,progress,result
     {
-        ProgressDialog loading;
         String temp;
+        String temp2;
         String[] unhashedData;
         String[] encryptedHash;
+        String [] imgPaths;
         String [] location;
+        String [] locationNames;
+        String [] dateTime;
+
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            loading = ProgressDialog.show(FilterActivity.this,"Searching...","Wait...", true, true);
+            pDialog.setMessage("Processing...");
         }
 
         @Override
         protected void onPostExecute(String[] result){
 
             File cert= null;
+            int imgHeightInPixel = 170;
+            int imgWidthInPixel = 170;
+            int imgHeightInPixel2 = 60;
+            int imgWidthInPixel2 = 60;
 
+            int imgMarginLeftInPixel = 20;
+            int imgMarginTopInPixel = 20;
+            int imgMarginRightInPixel = 20;
+            int imgMarginBottomInPixel = 20;
+
+            int paddingInPixel = 15;
+            int paddingInPixel2 = 5;
+            int paddingInPixel3 = 2;
+
+            int imgHeightInDp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, imgHeightInPixel, getResources().getDisplayMetrics());
+            int imgWidthInDp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, imgWidthInPixel, getResources().getDisplayMetrics());
+            int imgHeightInDp2 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, imgHeightInPixel2, getResources().getDisplayMetrics());
+            int imgWidthInDp2 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, imgWidthInPixel2, getResources().getDisplayMetrics());
+
+            int imgMarginLeftInDp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, imgMarginLeftInPixel, getResources().getDisplayMetrics());
+            int imgMarginTopInDp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, imgMarginTopInPixel, getResources().getDisplayMetrics());
+            int imgMarginRightInDp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, imgMarginRightInPixel, getResources().getDisplayMetrics());
+            int imgMarginBottomInDp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, imgMarginBottomInPixel, getResources().getDisplayMetrics());
+            int paddingInDp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, paddingInPixel, getResources().getDisplayMetrics());
+            int paddingInDp2 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, paddingInPixel2, getResources().getDisplayMetrics());
+            int paddingInDp3 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, paddingInPixel3, getResources().getDisplayMetrics());
+
+            pDialog.setMessage("Verfying certificates...");
             if(result!=null){
-                Toast.makeText(getApplicationContext(), "Download/Get Certs successfully", Toast.LENGTH_SHORT).show();
-                for(int i=0;i<result.length;i++){
-                    cert = new File(result[i]);
+                Log.d("Cert Result: ","Download/Get Certs successfully");
+                int prevViewId = 0;
+                for(int i=result.length;i>0;i--){
+                    cert = new File(result[i-1]);
 
                     //verify hash
                     VerifyHash vh = new VerifyHash();
@@ -174,21 +245,148 @@ public class FilterActivity extends AppCompatActivity {
 
                     try {
                         key = vh.ReadPemFile(cert.toString());
-                        decryptedhash = vh.DecryptHash(key, encryptedHash[i]);
-                        rehash = vh.hashStringWithSHA(unhashedData[i]);
+                        decryptedhash = vh.DecryptHash(key, encryptedHash[i-1]);
+                        rehash = vh.hashStringWithSHA(unhashedData[i-1]);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
 
                     Boolean verified = vh.CompareHash(decryptedhash, rehash);
-                    //pDialog.dismiss();
 
                     //if hash unchanged
                     if(verified){
-                        TextView textView = new TextView(FilterActivity.this);
-                        textView.setText(location[i]);
-                        Log.d("verified","aa");
-                        linearLayout.addView(textView);
+                        int curLayoutId = prevViewId + 10000000;
+                        int curTextViewId = prevViewId + 10;
+                        int curTextViewId2 = prevViewId + 100;
+                        int curTextViewId3 = prevViewId + 1000;
+                        int curTextViewId4 = prevViewId + 10000;
+                        int curTextViewId5 = prevViewId + 1000000;
+                        int curImageViewId = prevViewId + 1;
+                        int curImageViewId2 = prevViewId + 100000;
+
+                        // Creating a new RelativeLayout
+                        RelativeLayout relativeLayout2 = new RelativeLayout(FilterActivity.this);
+                        relativeLayout2.setId(curLayoutId);
+                        relativeLayout2.setBackgroundColor(Color.parseColor("#A5D6A7"));
+                        // Defining the RelativeLayout layout parameters.
+                        RelativeLayout.LayoutParams rlp = new RelativeLayout.LayoutParams(
+                                RelativeLayout.LayoutParams.WRAP_CONTENT,
+                                RelativeLayout.LayoutParams.WRAP_CONTENT);
+                        rlp.setMargins(imgMarginLeftInDp, imgMarginTopInDp, imgMarginRightInDp, imgMarginBottomInDp);
+                        rlp.addRule(RelativeLayout.BELOW, prevViewId);
+                        relativeLayout2.setPadding(paddingInDp, paddingInDp, paddingInDp, paddingInDp);
+                        relativeLayout2.setLayoutParams(rlp);
+
+                        //imageview 1
+                        Bitmap bitmap = BitmapFactory.decodeFile(imgPaths[i-1]);
+                        ImageView imageView = new ImageView(FilterActivity.this);
+
+                        DisplayMetrics dm = getApplicationContext().getResources().getDisplayMetrics();
+                        bitmap.setDensity(dm.densityDpi);
+                        BitmapDrawable drawable = new BitmapDrawable(getApplicationContext().getResources(),bitmap);
+                        imageView.setImageDrawable(drawable);
+                        imageView.setId(curImageViewId);
+                        final RelativeLayout.LayoutParams imgParams = new RelativeLayout.LayoutParams(imgHeightInDp,imgWidthInDp);
+                        imgParams.setMargins(0, 0, imgMarginRightInDp, 0);
+                        //imgParams.addRule(RelativeLayout.BELOW, prevViewId);
+                        imageView.setLayoutParams(imgParams);
+
+                        //imageview
+                        ImageView imageView2 = new ImageView(FilterActivity.this);
+                        imageView2.setBackgroundResource(R.drawable.arrow);
+                        imageView2.setId(curImageViewId2);
+                        final RelativeLayout.LayoutParams imgParams2 = new RelativeLayout.LayoutParams(imgHeightInDp2,imgWidthInDp2);
+                        imgParams2.addRule(RelativeLayout.BELOW, relativeLayout2.getId());
+                        imgParams2.addRule(RelativeLayout.CENTER_HORIZONTAL);
+                        imageView2.setLayoutParams(imgParams2);
+
+                        //textview 1
+                        final TextView textView = new TextView(FilterActivity.this);
+                        textView.setText(locationNames[i-1]);
+                        textView.setTextColor(Color.parseColor("#1B5E20"));
+                        textView.setTextSize(22);
+                        textView.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD_ITALIC));
+                        textView.setTypeface(Typeface.SERIF);
+                        textView.setId(curTextViewId);
+                        final RelativeLayout.LayoutParams txtParams = new RelativeLayout.LayoutParams(
+                                RelativeLayout.LayoutParams.WRAP_CONTENT,
+                                RelativeLayout.LayoutParams.WRAP_CONTENT);
+                        txtParams.setMargins(0,paddingInDp2,0,paddingInDp3);
+                        txtParams.addRule(RelativeLayout.BELOW, prevViewId);
+                        txtParams.addRule(RelativeLayout.RIGHT_OF, imageView.getId());
+                        textView.setLayoutParams(txtParams);
+
+                        //textview 2
+//                        final TextView textView2 = new TextView(FilterActivity.this);
+//                        textView2.setText("Details");
+//                        textView2.setTextColor(Color.parseColor("#212121"));
+//                        textView2.setTextSize(15);
+//                        textView2.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
+//                        textView2.setTypeface(Typeface.SERIF);
+//                        textView2.setId(curTextViewId2);
+//                        final RelativeLayout.LayoutParams txtParams2 = new RelativeLayout.LayoutParams(
+//                                RelativeLayout.LayoutParams.WRAP_CONTENT,
+//                                RelativeLayout.LayoutParams.WRAP_CONTENT);
+//                        txtParams2.addRule(RelativeLayout.BELOW, textView.getId());
+//                        txtParams2.addRule(RelativeLayout.RIGHT_OF, imageView.getId());
+//                        textView2.setLayoutParams(txtParams2);
+
+                        //textview 3
+                        final TextView textView3 = new TextView(FilterActivity.this);
+                        textView3.setText("Block No: ");
+                        textView3.setTextColor(Color.parseColor("#212121"));
+                        textView3.setTextSize(12);
+                        textView3.setTypeface(Typeface.SERIF);
+                        textView3.setId(curTextViewId3);
+                        final RelativeLayout.LayoutParams txtParams3 = new RelativeLayout.LayoutParams(
+                                RelativeLayout.LayoutParams.WRAP_CONTENT,
+                                RelativeLayout.LayoutParams.WRAP_CONTENT);
+                        txtParams3.setMargins(0,0,0,paddingInDp3);
+                        txtParams3.addRule(RelativeLayout.BELOW, textView.getId());
+                        txtParams3.addRule(RelativeLayout.RIGHT_OF, imageView.getId());
+                        textView3.setLayoutParams(txtParams3);
+
+                        //textview 4
+                        final TextView textView4 = new TextView(FilterActivity.this);
+                        textView4.setText("DateTime: "+dateTime[i-1]);
+                        textView4.setTextColor(Color.parseColor("#212121"));
+                        textView4.setTextSize(12);
+                        textView4.setTypeface(Typeface.SERIF);
+                        textView4.setId(curTextViewId4);
+                        final RelativeLayout.LayoutParams txtParams4 = new RelativeLayout.LayoutParams(
+                                RelativeLayout.LayoutParams.WRAP_CONTENT,
+                                RelativeLayout.LayoutParams.WRAP_CONTENT);
+                        txtParams4.setMargins(0,0,0,paddingInDp3);
+                        txtParams4.addRule(RelativeLayout.BELOW, textView3.getId());
+                        txtParams4.addRule(RelativeLayout.RIGHT_OF, imageView.getId());
+                        textView4.setLayoutParams(txtParams4);
+
+                        //textview 5
+                        final TextView textView5 = new TextView(FilterActivity.this);
+                        textView5.setText("Verified: "+verified);
+                        textView5.setTextColor(Color.parseColor("#00C853"));
+                        textView5.setTextSize(12);
+                        textView5.setTypeface(Typeface.SERIF);
+                        textView5.setId(curTextViewId5);
+                        final RelativeLayout.LayoutParams txtParams5 = new RelativeLayout.LayoutParams(
+                                RelativeLayout.LayoutParams.WRAP_CONTENT,
+                                RelativeLayout.LayoutParams.WRAP_CONTENT);
+                        txtParams5.addRule(RelativeLayout.BELOW, textView4.getId());
+                        txtParams5.addRule(RelativeLayout.RIGHT_OF, imageView.getId());
+                        textView5.setLayoutParams(txtParams5);
+
+                        prevViewId = curImageViewId2;
+                        relativeLayout2.addView(imageView);
+                        relativeLayout2.addView(textView);
+                        //relativeLayout2.addView(textView2);
+                        relativeLayout2.addView(textView3);
+                        relativeLayout2.addView(textView4);
+                        relativeLayout2.addView(textView5);
+
+                        relativeLayout.addView(relativeLayout2);
+                        if(i!=1) {
+                            relativeLayout.addView(imageView2);
+                        }
                     }else{
                         Toast.makeText(getApplicationContext(), "Failed to verify location", Toast.LENGTH_SHORT).show();
                     }
@@ -197,7 +395,7 @@ public class FilterActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(), "System Error Occured", Toast.LENGTH_SHORT).show();
             }
 
-            loading.dismiss();
+            pDialog.dismiss();
         }
 
         @Override
@@ -208,15 +406,17 @@ public class FilterActivity extends AppCompatActivity {
             unhashedData = new String[filteredJson.length()];
             encryptedHash = new String[filteredJson.length()];
             location = new String[filteredJson.length()];
+            locationNames = new String[filteredJson.length()];
+            dateTime = new String[filteredJson.length()];
+            imgPaths = new String[filteredJson.length()];
 
             for(int j=0;j<filteredJson.length();j++) {
                 try {
                     unhashedData[j] = filteredJson.getJSONObject(j).getString("unhashedData");
                     encryptedHash[j] = filteredJson.getJSONObject(j).getString("encryptedHash");
 
-                    //String dateTime = msgArray.getJSONObject(j).getJSONObject("unhashedData").getString("currentDateTime");
-                    location [j] = filteredJson.getJSONObject(j).getJSONObject("unhashedData").getString("location");
-
+                    dateTime [j] = msgArray.getJSONObject(j).getJSONObject("unhashedData").getString("currentDateTime");
+                    location [j] = msgArray.getJSONObject(j).getJSONObject("unhashedData").getString("location");
                     //open txt database
                     // get location cert url and name
                     String txtContent = readRawTextFile(getApplicationContext(),R.raw.database);
@@ -224,10 +424,13 @@ public class FilterActivity extends AppCompatActivity {
                     JSONObject locationJson = new JSONObject(database.getString(location[j]));
                     String locationName = locationJson.getString("Name");
                     String certUrl = locationJson.getString("CertUrl");
+                    String picUrl = locationJson.getString("PicUrl");
+
+                    locationNames[j] = locationName;
                     Log.d("Url", locationJson.getString("CertUrl"));
                     Log.d("Name", locationJson.getString("Name"));
 
-                    //download operation
+                    //download operation 1
                     temp = getApplicationContext().getFilesDir() + "/" + locationName + ".pem";
                     temp.replaceAll("\\s", " ");
                     File certfile = new File(temp);
@@ -267,6 +470,47 @@ public class FilterActivity extends AppCompatActivity {
                             Log.d("Error", e.getMessage());
                         }
                     }
+
+                    //download operation 2
+                    temp2 = getApplicationContext().getFilesDir() + "/" + locationName + ".png";
+                    temp2.replaceAll("\\s", " ");
+                    File certfile2 = new File(temp2);
+
+                    if (certfile2.exists()) {
+                        Log.d("fileexist", "yes");
+                        imgPaths[j] = certfile2.toString();
+                    } else {
+                        try {
+                            URL url = new URL(picUrl);
+                            URLConnection connection = url.openConnection();
+
+                            long fileLength = connection.getContentLength();
+                            InputStream input = new BufferedInputStream(url.openStream(), 10 * 1024);
+
+                            OutputStream output = new FileOutputStream(temp2);
+                            byte data[] = new byte[1024];
+                            long totalBytes = 0;
+
+                            while ((readBytes = input.read(data)) != -1) {
+                                totalBytes = totalBytes + readBytes;
+                                Long percentage = (totalBytes * 100) / fileLength;
+                                publishProgress(String.valueOf(percentage));
+                                output.write(data, 0, readBytes);
+                            }
+
+                            output.flush();
+                            output.close();
+                            input.close();
+
+                            //check if file downloaded
+                            if(certfile.exists()){
+                                imgPaths[j] = temp2;
+                                Log.d("path created?", imgPaths[j]);
+                            }
+                        } catch (Exception e) {
+                            Log.d("Error", e.getMessage());
+                        }
+                    }
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -293,5 +537,13 @@ public class FilterActivity extends AppCompatActivity {
             return null;
         }
         return text.toString();
+    }
+
+    // Checks the network connection (wifi or mobile data)
+    private boolean isNetworkAvailable() {
+        connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 }
