@@ -60,6 +60,7 @@ public class FilterActivity extends AppCompatActivity {
     final String url =  "http://174.140.168.136:6876/nxt?=%2Fnxt&requestType=getBlockchainTransactions&account=";
 
     public static AlertDialog ConnectionAlert=null;
+    public static AlertDialog ConnectionTimeout=null;
     private ProgressDialog pDialog;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,6 +88,18 @@ public class FilterActivity extends AppCompatActivity {
                 });
         ConnectionAlert = builder.create();
         ConnectionAlert.setCanceledOnTouchOutside(false);
+
+        //initialize dialog 1 - connect to network for action
+        AlertDialog.Builder builder2 = new AlertDialog.Builder(FilterActivity.this);
+        builder2.setMessage("Connection timeout, please try again")
+                .setCancelable(false)
+                .setNegativeButton("Ok", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        finish();
+                    }
+                });
+        ConnectionTimeout = builder.create();
+        ConnectionTimeout.setCanceledOnTouchOutside(false);
 
         if(isNetworkAvailable()){
             filterChain(nxtAccNum,batchID);
@@ -187,7 +200,7 @@ public class FilterActivity extends AppCompatActivity {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         Log.d("Error.Response", error.toString());
-                        Toast.makeText(FilterActivity.this, "Connection timeout", Toast.LENGTH_SHORT).show();
+                        ConnectionTimeout.show();
                         pDialog.dismiss();
                     }
                 }
@@ -199,14 +212,8 @@ public class FilterActivity extends AppCompatActivity {
 
     class DownloadFile extends AsyncTask<JSONArray,String,String[]> //params,progress,result
     {
-        String temp;
-        String temp2;
-        String[] unhashedData;
-        String[] encryptedHash;
-        String [] imgPaths;
-        String [] location;
-        String [] locationNames;
-        String [] dateTime;
+        String temp,temp2;
+        String[] unhashedData, encryptedHash,imgPaths,location,locationNames,dateTime, transID;
 
         @Override
         protected void onPreExecute() {
@@ -218,32 +225,20 @@ public class FilterActivity extends AppCompatActivity {
         protected void onPostExecute(String[] result){
 
             File cert= null;
-            int imgHeightInPixel = 170;
-            int imgWidthInPixel = 170;
-            int imgHeightInPixel2 = 60;
-            int imgWidthInPixel2 = 60;
+            //left top right bottom
+            int valueInPixel = 170;
+            int valueInPixel2 = 60;
+            int valueInPixel3 = 20;
+            int valueInPixel4 = 15;
+            int valueInPixel5 = 5;
+            int valueInPixel6 = 2;
 
-            int imgMarginLeftInPixel = 20;
-            int imgMarginTopInPixel = 20;
-            int imgMarginRightInPixel = 20;
-            int imgMarginBottomInPixel = 20;
-
-            int paddingInPixel = 15;
-            int paddingInPixel2 = 5;
-            int paddingInPixel3 = 2;
-
-            int imgHeightInDp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, imgHeightInPixel, getResources().getDisplayMetrics());
-            int imgWidthInDp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, imgWidthInPixel, getResources().getDisplayMetrics());
-            int imgHeightInDp2 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, imgHeightInPixel2, getResources().getDisplayMetrics());
-            int imgWidthInDp2 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, imgWidthInPixel2, getResources().getDisplayMetrics());
-
-            int imgMarginLeftInDp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, imgMarginLeftInPixel, getResources().getDisplayMetrics());
-            int imgMarginTopInDp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, imgMarginTopInPixel, getResources().getDisplayMetrics());
-            int imgMarginRightInDp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, imgMarginRightInPixel, getResources().getDisplayMetrics());
-            int imgMarginBottomInDp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, imgMarginBottomInPixel, getResources().getDisplayMetrics());
-            int paddingInDp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, paddingInPixel, getResources().getDisplayMetrics());
-            int paddingInDp2 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, paddingInPixel2, getResources().getDisplayMetrics());
-            int paddingInDp3 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, paddingInPixel3, getResources().getDisplayMetrics());
+            int valueInDp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, valueInPixel, getResources().getDisplayMetrics());
+            int valueInDp2 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, valueInPixel2, getResources().getDisplayMetrics());
+            int valueInDp3 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, valueInPixel3, getResources().getDisplayMetrics());
+            int valueInDp4 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, valueInPixel4, getResources().getDisplayMetrics());
+            int valueInDp5 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, valueInPixel5, getResources().getDisplayMetrics());
+            int valueInDp6 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, valueInPixel6, getResources().getDisplayMetrics());
 
             pDialog.setMessage("Verfying certificates...");
             if(result!=null){
@@ -272,7 +267,7 @@ public class FilterActivity extends AppCompatActivity {
                     if(verified){
                         int curLayoutId = prevViewId + 10000000;
                         int curTextViewId = prevViewId + 10;
-                        int curTextViewId2 = prevViewId + 100;
+                        //int curTextViewId2 = prevViewId + 100;
                         int curTextViewId3 = prevViewId + 1000;
                         int curTextViewId4 = prevViewId + 10000;
                         int curTextViewId5 = prevViewId + 1000000;
@@ -287,30 +282,30 @@ public class FilterActivity extends AppCompatActivity {
                         RelativeLayout.LayoutParams rlp = new RelativeLayout.LayoutParams(
                                 RelativeLayout.LayoutParams.WRAP_CONTENT,
                                 RelativeLayout.LayoutParams.WRAP_CONTENT);
-                        rlp.setMargins(imgMarginLeftInDp, imgMarginTopInDp, imgMarginRightInDp, imgMarginBottomInDp);
+                        rlp.setMargins(valueInDp3, valueInDp3, valueInDp3, valueInDp3);
                         rlp.addRule(RelativeLayout.BELOW, prevViewId);
-                        relativeLayout2.setPadding(paddingInDp, paddingInDp, paddingInDp, paddingInDp);
+                        relativeLayout2.setPadding(valueInDp4, valueInDp4, valueInDp4, valueInDp4);
                         relativeLayout2.setLayoutParams(rlp);
 
                         //imageview 1
-                        Bitmap bitmap = BitmapFactory.decodeFile(imgPaths[i-1]);
                         ImageView imageView = new ImageView(FilterActivity.this);
-
-                        DisplayMetrics dm = getApplicationContext().getResources().getDisplayMetrics();
-                        bitmap.setDensity(dm.densityDpi);
-                        BitmapDrawable drawable = new BitmapDrawable(getApplicationContext().getResources(),bitmap);
-                        imageView.setImageDrawable(drawable);
                         imageView.setId(curImageViewId);
-                        final RelativeLayout.LayoutParams imgParams = new RelativeLayout.LayoutParams(imgHeightInDp,imgWidthInDp);
-                        imgParams.setMargins(0, 0, imgMarginRightInDp, 0);
-                        //imgParams.addRule(RelativeLayout.BELOW, prevViewId);
+                        final RelativeLayout.LayoutParams imgParams = new RelativeLayout.LayoutParams(valueInDp,valueInDp);
+                        imgParams.setMargins(0, 0, valueInDp3, 0);
                         imageView.setLayoutParams(imgParams);
+                        imageView.setAdjustViewBounds(true);
+
+                        Bitmap bitmap;
+                        bitmap = BitmapFactory.decodeFile(imgPaths[i-1]);
+                        Bitmap bmp = Bitmap.createScaledBitmap(bitmap, valueInDp, valueInDp, false);
+                        imageView.setImageBitmap(bmp);
+
 
                         //imageview
                         ImageView imageView2 = new ImageView(FilterActivity.this);
                         imageView2.setBackgroundResource(R.drawable.arrow);
                         imageView2.setId(curImageViewId2);
-                        final RelativeLayout.LayoutParams imgParams2 = new RelativeLayout.LayoutParams(imgHeightInDp2,imgWidthInDp2);
+                        final RelativeLayout.LayoutParams imgParams2 = new RelativeLayout.LayoutParams(valueInDp2,valueInDp2);
                         imgParams2.addRule(RelativeLayout.BELOW, relativeLayout2.getId());
                         imgParams2.addRule(RelativeLayout.CENTER_HORIZONTAL);
                         imageView2.setLayoutParams(imgParams2);
@@ -326,40 +321,25 @@ public class FilterActivity extends AppCompatActivity {
                         final RelativeLayout.LayoutParams txtParams = new RelativeLayout.LayoutParams(
                                 RelativeLayout.LayoutParams.WRAP_CONTENT,
                                 RelativeLayout.LayoutParams.WRAP_CONTENT);
-                        txtParams.setMargins(0,paddingInDp2,0,paddingInDp3);
+                        txtParams.setMargins(0,valueInDp5,0,valueInDp5);
                         txtParams.addRule(RelativeLayout.BELOW, prevViewId);
                         txtParams.addRule(RelativeLayout.RIGHT_OF, imageView.getId());
                         textView.setLayoutParams(txtParams);
 
-                        //textview 2
-//                        final TextView textView2 = new TextView(FilterActivity.this);
-//                        textView2.setText("Details");
-//                        textView2.setTextColor(Color.parseColor("#212121"));
-//                        textView2.setTextSize(15);
-//                        textView2.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
-//                        textView2.setTypeface(Typeface.SERIF);
-//                        textView2.setId(curTextViewId2);
-//                        final RelativeLayout.LayoutParams txtParams2 = new RelativeLayout.LayoutParams(
+                        //textview 3
+//                        final TextView textView3 = new TextView(FilterActivity.this);
+//                        textView3.setText("ID: "+transID[i-1]);
+//                        textView3.setTextColor(Color.parseColor("#212121"));
+//                        textView3.setTextSize(12);
+//                        textView3.setTypeface(Typeface.SERIF);
+//                        textView3.setId(curTextViewId3);
+//                        final RelativeLayout.LayoutParams txtParams3 = new RelativeLayout.LayoutParams(
 //                                RelativeLayout.LayoutParams.WRAP_CONTENT,
 //                                RelativeLayout.LayoutParams.WRAP_CONTENT);
-//                        txtParams2.addRule(RelativeLayout.BELOW, textView.getId());
-//                        txtParams2.addRule(RelativeLayout.RIGHT_OF, imageView.getId());
-//                        textView2.setLayoutParams(txtParams2);
-
-                        //textview 3
-                        final TextView textView3 = new TextView(FilterActivity.this);
-                        textView3.setText("Block No: ");
-                        textView3.setTextColor(Color.parseColor("#212121"));
-                        textView3.setTextSize(12);
-                        textView3.setTypeface(Typeface.SERIF);
-                        textView3.setId(curTextViewId3);
-                        final RelativeLayout.LayoutParams txtParams3 = new RelativeLayout.LayoutParams(
-                                RelativeLayout.LayoutParams.WRAP_CONTENT,
-                                RelativeLayout.LayoutParams.WRAP_CONTENT);
-                        txtParams3.setMargins(0,0,0,paddingInDp3);
-                        txtParams3.addRule(RelativeLayout.BELOW, textView.getId());
-                        txtParams3.addRule(RelativeLayout.RIGHT_OF, imageView.getId());
-                        textView3.setLayoutParams(txtParams3);
+//                        txtParams3.setMargins(0,0,0,valueInDp6);
+//                        txtParams3.addRule(RelativeLayout.BELOW, textView.getId());
+//                        txtParams3.addRule(RelativeLayout.RIGHT_OF, imageView.getId());
+//                        textView3.setLayoutParams(txtParams3);
 
                         //textview 4
                         final TextView textView4 = new TextView(FilterActivity.this);
@@ -371,8 +351,8 @@ public class FilterActivity extends AppCompatActivity {
                         final RelativeLayout.LayoutParams txtParams4 = new RelativeLayout.LayoutParams(
                                 RelativeLayout.LayoutParams.WRAP_CONTENT,
                                 RelativeLayout.LayoutParams.WRAP_CONTENT);
-                        txtParams4.setMargins(0,0,0,paddingInDp3);
-                        txtParams4.addRule(RelativeLayout.BELOW, textView3.getId());
+                        txtParams4.setMargins(0,0,0,valueInDp6);
+                        txtParams4.addRule(RelativeLayout.BELOW, textView.getId());
                         txtParams4.addRule(RelativeLayout.RIGHT_OF, imageView.getId());
                         textView4.setLayoutParams(txtParams4);
 
@@ -394,7 +374,7 @@ public class FilterActivity extends AppCompatActivity {
                         relativeLayout2.addView(imageView);
                         relativeLayout2.addView(textView);
                         //relativeLayout2.addView(textView2);
-                        relativeLayout2.addView(textView3);
+                        //relativeLayout2.addView(textView3);
                         relativeLayout2.addView(textView4);
                         relativeLayout2.addView(textView5);
 
@@ -424,14 +404,17 @@ public class FilterActivity extends AppCompatActivity {
             locationNames = new String[filteredJson.length()];
             dateTime = new String[filteredJson.length()];
             imgPaths = new String[filteredJson.length()];
+            transID = new String[filteredJson.length()];
 
             for(int j=0;j<filteredJson.length();j++) {
                 try {
                     unhashedData[j] = filteredJson.getJSONObject(j).getString("unhashedData");
                     encryptedHash[j] = filteredJson.getJSONObject(j).getString("encryptedHash");
+                    transID [j] = filteredJson.getJSONObject(j).getString("transID");
 
                     dateTime [j] = msgArray.getJSONObject(j).getJSONObject("unhashedData").getString("currentDateTime");
                     location [j] = msgArray.getJSONObject(j).getJSONObject("unhashedData").getString("location");
+
                     //open txt database
                     // get location cert url and name
                     String txtContent = readRawTextFile(getApplicationContext(),R.raw.database);
