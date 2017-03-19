@@ -208,6 +208,8 @@ public class FilterActivity extends AppCompatActivity {
 
                         }catch (Exception e){
                             e.printStackTrace();
+                            pDialog.dismiss();
+                            Error.show();
                         }
                     }
                 },
@@ -383,7 +385,7 @@ public class FilterActivity extends AppCompatActivity {
 
                         //textview 5
                         final TextView textView5 = new TextView(FilterActivity.this);
-                        textView5.setText("Verified: "+verified);
+                        textView5.setText("Verified: "+verified [i-1]);
                         textView5.setTextColor(Color.parseColor("#00C853"));
                         textView5.setTextSize(12);
                         textView5.setTypeface(Typeface.SERIF);
