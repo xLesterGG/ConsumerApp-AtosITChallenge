@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
                 JSONObject qrData = new JSONObject(scanResult.getContents());
 
                 if (qrData.has("nxtAccNum") && qrData.has("batchID") && qrData.has("productName")) {
-                    Toast.makeText(getApplicationContext(), "Valid FoodChain™ QR detected", Toast.LENGTH_LONG).show();
+                    //Toast.makeText(getApplicationContext(), "Valid FoodChain™ QR detected", Toast.LENGTH_LONG).show();
                     String nxtAccNum = qrData.getString("nxtAccNum");
                     String batchID = qrData.getString("batchID");        // format of qr data
                     String productName = qrData.getString("productName");

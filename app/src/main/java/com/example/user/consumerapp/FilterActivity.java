@@ -57,15 +57,19 @@ public class FilterActivity extends AppCompatActivity {
     ConnectivityManager connectivityManager;
     NetworkInfo activeNetworkInfo;
 
-    final String url =  "http://174.140.168.136:6876/nxt?=%2Fnxt&requestType=getBlockchainTransactions&account=";
+    String url;
 
     public static AlertDialog ConnectionAlert=null;
-    public static AlertDialog ConnectionTimeout=null;
+    public static AlertDialog Error =null;
+    public static AlertDialog Verification =null;
+
     private ProgressDialog pDialog;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_filter);
+
+        url = readRawTextFile(FilterActivity.this,R.raw.nxturl);
 
         // Get the Intent that started this activity and extract the string
         Intent intent = getIntent();
@@ -89,17 +93,29 @@ public class FilterActivity extends AppCompatActivity {
         ConnectionAlert = builder.create();
         ConnectionAlert.setCanceledOnTouchOutside(false);
 
-        //initialize dialog 1 - connect to network for action
+        //initialize dialog 2 - error dialog
         AlertDialog.Builder builder2 = new AlertDialog.Builder(FilterActivity.this);
-        builder2.setMessage("Connection timeout, please try again")
+        builder2.setMessage("Error occured, please try again")
                 .setCancelable(false)
                 .setNegativeButton("Ok", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         finish();
                     }
                 });
-        ConnectionTimeout = builder.create();
-        ConnectionTimeout.setCanceledOnTouchOutside(false);
+        Error = builder2.create();
+        Error.setCanceledOnTouchOutside(false);
+
+        //initialize dialog 2 - error dialog
+        AlertDialog.Builder builder3 = new AlertDialog.Builder(FilterActivity.this);
+        builder3.setMessage("Location verification failed")
+                .setCancelable(false)
+                .setNegativeButton("Ok", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        finish();
+                    }
+                });
+        Verification = builder3.create();
+        Verification.setCanceledOnTouchOutside(false);
 
         if(isNetworkAvailable()){
             filterChain(nxtAccNum,batchID);
@@ -200,8 +216,8 @@ public class FilterActivity extends AppCompatActivity {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         Log.d("Error.Response", error.toString());
-                        ConnectionTimeout.show();
                         pDialog.dismiss();
+                        Error.show();
                     }
                 }
         );
@@ -214,6 +230,7 @@ public class FilterActivity extends AppCompatActivity {
     {
         String temp,temp2;
         String[] unhashedData, encryptedHash,imgPaths,location,locationNames,dateTime, transID;
+        Boolean [] verified;
 
         @Override
         protected void onPreExecute() {
@@ -224,6 +241,7 @@ public class FilterActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String[] result){
 
+            Boolean notVerified = false;
             File cert= null;
             //left top right bottom
             int valueInPixel = 170;
@@ -240,12 +258,13 @@ public class FilterActivity extends AppCompatActivity {
             int valueInDp5 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, valueInPixel5, getResources().getDisplayMetrics());
             int valueInDp6 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, valueInPixel6, getResources().getDisplayMetrics());
 
-            pDialog.setMessage("Verfying certificates...");
             if(result!=null){
                 Log.d("Cert Result: ","Download/Get Certs successfully");
                 int prevViewId = 0;
-                for(int i=result.length;i>0;i--){
-                    cert = new File(result[i-1]);
+                verified =  new Boolean[result.length];
+
+                for(int i=result.length;i>0;i--) {
+                    cert = new File(result[i - 1]);
 
                     //verify hash
                     VerifyHash vh = new VerifyHash();
@@ -255,16 +274,22 @@ public class FilterActivity extends AppCompatActivity {
 
                     try {
                         key = vh.ReadPemFile(cert.toString());
-                        decryptedhash = vh.DecryptHash(key, encryptedHash[i-1]);
-                        rehash = vh.hashStringWithSHA(unhashedData[i-1]);
+                        decryptedhash = vh.DecryptHash(key, encryptedHash[i - 1]);
+                        rehash = vh.hashStringWithSHA(unhashedData[i - 1]);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
 
-                    Boolean verified = vh.CompareHash(decryptedhash, rehash);
+                    verified[i - 1] = vh.CompareHash(decryptedhash, rehash);
+                }
 
+                for(int i=result.length;i>0;i--) {
                     //if hash unchanged
-                    if(verified){
+                    if(verified [i - 1]==false) {
+                        notVerified = true;
+                    }
+
+                    if(!notVerified) {
                         int curLayoutId = prevViewId + 10000000;
                         int curTextViewId = prevViewId + 10;
                         //int curTextViewId2 = prevViewId + 100;
@@ -382,12 +407,12 @@ public class FilterActivity extends AppCompatActivity {
                         if(i!=1) {
                             relativeLayout.addView(imageView2);
                         }
-                    }else{
-                        Toast.makeText(getApplicationContext(), "Failed to verify location", Toast.LENGTH_SHORT).show();
+                    } else{
+                        Verification.show();
                     }
                 }
             }else{
-                Toast.makeText(getApplicationContext(), "System Error Occured", Toast.LENGTH_SHORT).show();
+                Error.show();
             }
 
             pDialog.dismiss();
@@ -465,6 +490,7 @@ public class FilterActivity extends AppCompatActivity {
                                 Log.d("path created?", path[1]);
                             }
                         } catch (Exception e) {
+                            Error.show();
                             Log.d("Error", e.getMessage());
                         }
                     }
@@ -507,9 +533,11 @@ public class FilterActivity extends AppCompatActivity {
                             }
                         } catch (Exception e) {
                             Log.d("Error", e.getMessage());
+                            Error.show();
                         }
                     }
                 } catch (JSONException e) {
+                    Error.show();
                     e.printStackTrace();
                 }
             }
