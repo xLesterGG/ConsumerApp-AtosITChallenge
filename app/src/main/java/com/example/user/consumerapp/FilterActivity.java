@@ -125,7 +125,7 @@ public class FilterActivity extends AppCompatActivity {
     }
 
     public void filterChain(String accNum, final String batchID){
-        String nxtUrl = url+accNum;
+        String nxtUrl = url.replaceAll("\\s+","") +accNum;
 
         // Showing progress dialog before making http request
         pDialog.setMessage("Getting data from blockchain...");
@@ -147,7 +147,7 @@ public class FilterActivity extends AppCompatActivity {
 
                             msgArray = new JSONArray();
 ///transactionArray.length()
-                            for(int i=0;i<12;i++){
+                            for(int i=0;i<transactionArray.length();i++){
                                 // for(int i=0;i<4;i++){
                               //  Log.d("aaa",transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message"));
 
