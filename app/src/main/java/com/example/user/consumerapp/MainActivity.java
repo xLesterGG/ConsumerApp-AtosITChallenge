@@ -37,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
         verifyStoragePermissions(MainActivity.this);
 
+        // scanner image onclick
         imgScan = (ImageView) findViewById(R.id.scanIcon);
         imgScan.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -47,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    //double click back to exit
+    // double click back to exit application
     @Override
     public void onBackPressed() {
         if (doubleBackToExitPressedOnce) {
@@ -67,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
         }, 2000);
     }
 
+    // on qr scanner result
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
@@ -75,11 +77,11 @@ public class MainActivity extends AppCompatActivity {
 
             try {
                 JSONObject qrData = new JSONObject(scanResult.getContents());
-
+                // check if qr valid
+                // format of qr data (nxtAccNum,batchID,productName)
                 if (qrData.has("nxtAccNum") && qrData.has("batchID") && qrData.has("productName")) {
-                    //Toast.makeText(getApplicationContext(), "Valid FoodChain™ QR detected", Toast.LENGTH_LONG).show();
                     String nxtAccNum = qrData.getString("nxtAccNum");
-                    String batchID = qrData.getString("batchID");        // format of qr data
+                    String batchID = qrData.getString("batchID");
                     String productName = qrData.getString("productName");
 
                     Intent intent = new Intent(this, FilterActivity.class);
@@ -88,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
                     intent.putExtra("batchID",batchID);
                     startActivity(intent);
                 } else {
-                    Toast.makeText(getApplicationContext(), "Not a Valid FoodChain™ QR , please try again", Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, "Not a Valid FoodChain™ QR , please try again", Toast.LENGTH_LONG).show();
                 }
 
             } catch (Exception e) {
@@ -98,7 +100,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public static void verifyStoragePermissions(Activity activity) { // for marshmallow permissions
+    // check scanner app permissions for marshmallow and above
+    public static void verifyStoragePermissions(Activity activity) {
         // Check if we have write permission
         int permission = ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE);
 

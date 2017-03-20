@@ -69,6 +69,7 @@ public class FilterActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_filter);
 
+        // read the nxt url from text file
         url = readRawTextFile(FilterActivity.this,R.raw.nxturl);
 
         // Get the Intent that started this activity and extract the string
@@ -105,7 +106,7 @@ public class FilterActivity extends AppCompatActivity {
         Error = builder2.create();
         Error.setCanceledOnTouchOutside(false);
 
-        //initialize dialog 2 - error dialog
+        //initialize dialog 3 - verification failed dialog
         AlertDialog.Builder builder3 = new AlertDialog.Builder(FilterActivity.this);
         builder3.setMessage("Location verification failed")
                 .setCancelable(false)
@@ -117,6 +118,7 @@ public class FilterActivity extends AppCompatActivity {
         Verification = builder3.create();
         Verification.setCanceledOnTouchOutside(false);
 
+        // if network available, start filter food chain
         if(isNetworkAvailable()){
             filterChain(nxtAccNum,batchID);
         }else{
@@ -138,19 +140,11 @@ public class FilterActivity extends AppCompatActivity {
                 {
                     @Override
                     public void onResponse(JSONObject response) {
-                        // display response
-                        // Log.d("Response", response.toString());
                         try{
                             JSONArray transactionArray = response.getJSONArray("transactions");  // extract transactions
-
-                            //  String[] messagesArray = new String[transactionArray.length()]; // array to store raw messages
-
                             msgArray = new JSONArray();
-///transactionArray.length()
-                            for(int i=0;i<transactionArray.length();i++){
-                                // for(int i=0;i<4;i++){
-                              //  Log.d("aaa",transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message"));
 
+                            for(int i=0;i<transactionArray.length();i++){
                                 if(transactionArray.getJSONObject(i).getJSONObject("attachment").has("message")){
 
                                     String arr[] = new String[4];
@@ -201,7 +195,7 @@ public class FilterActivity extends AppCompatActivity {
                                 }
                             }
 
-                            //download certfile
+                            // download certfile and verify
                             DownloadFile dl = new DownloadFile();
                             dl.execute(msgArray);
                             Log.d("asdasd",msgArray.toString());
@@ -245,26 +239,22 @@ public class FilterActivity extends AppCompatActivity {
 
             Boolean notVerified = false;
             File cert= null;
-            //left top right bottom
-            int valueInPixel = 170;
-            int valueInPixel2 = 60;
-            int valueInPixel3 = 20;
-            int valueInPixel4 = 15;
-            int valueInPixel5 = 5;
-            int valueInPixel6 = 2;
 
-            int valueInDp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, valueInPixel, getResources().getDisplayMetrics());
-            int valueInDp2 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, valueInPixel2, getResources().getDisplayMetrics());
-            int valueInDp3 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, valueInPixel3, getResources().getDisplayMetrics());
-            int valueInDp4 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, valueInPixel4, getResources().getDisplayMetrics());
-            int valueInDp5 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, valueInPixel5, getResources().getDisplayMetrics());
-            int valueInDp6 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, valueInPixel6, getResources().getDisplayMetrics());
+            // get values in dp
+            int valueInDp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 170, getResources().getDisplayMetrics());
+            int valueInDp2 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 60, getResources().getDisplayMetrics());
+            int valueInDp3 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, getResources().getDisplayMetrics());
+            int valueInDp4 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 15, getResources().getDisplayMetrics());
+            int valueInDp5 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5, getResources().getDisplayMetrics());
+            int valueInDp6 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2, getResources().getDisplayMetrics());
 
+            // if certs file paths are retrieved
             if(result!=null){
                 Log.d("Cert Result: ","Download/Get Certs successfully");
                 int prevViewId = 0;
                 verified =  new Boolean[result.length];
 
+                // verify each of the locations
                 for(int i=result.length;i>0;i--) {
                     cert = new File(result[i - 1]);
 
@@ -286,16 +276,16 @@ public class FilterActivity extends AppCompatActivity {
                 }
 
                 for(int i=result.length;i>0;i--) {
-                    //if hash unchanged
+                    //if one of the location is not verified, set notVerified to true
                     if(verified [i - 1]==false) {
                         notVerified = true;
                     }
 
+                    // if all locations are verified
+                    // dynamically load the locations info
                     if(!notVerified) {
                         int curLayoutId = prevViewId + 10000000;
                         int curTextViewId = prevViewId + 10;
-                        //int curTextViewId2 = prevViewId + 100;
-                        int curTextViewId3 = prevViewId + 1000;
                         int curTextViewId4 = prevViewId + 10000;
                         int curTextViewId5 = prevViewId + 1000000;
                         int curImageViewId = prevViewId + 1;
@@ -314,7 +304,7 @@ public class FilterActivity extends AppCompatActivity {
                         relativeLayout2.setPadding(valueInDp4, valueInDp4, valueInDp4, valueInDp4);
                         relativeLayout2.setLayoutParams(rlp);
 
-                        //imageview 1
+                        //imageview 1 - location picture
                         ImageView imageView = new ImageView(FilterActivity.this);
                         imageView.setId(curImageViewId);
                         final RelativeLayout.LayoutParams imgParams = new RelativeLayout.LayoutParams(valueInDp,valueInDp);
@@ -328,7 +318,7 @@ public class FilterActivity extends AppCompatActivity {
                         imageView.setImageBitmap(bmp);
 
 
-                        //imageview
+                        //imageview 2 - arrow
                         ImageView imageView2 = new ImageView(FilterActivity.this);
                         imageView2.setBackgroundResource(R.drawable.arrow);
                         imageView2.setId(curImageViewId2);
@@ -337,7 +327,7 @@ public class FilterActivity extends AppCompatActivity {
                         imgParams2.addRule(RelativeLayout.CENTER_HORIZONTAL);
                         imageView2.setLayoutParams(imgParams2);
 
-                        //textview 1
+                        //textview 1 - location name
                         final TextView textView = new TextView(FilterActivity.this);
                         textView.setText(locationNames[i-1]);
                         textView.setTextColor(Color.parseColor("#1B5E20"));
@@ -353,58 +343,43 @@ public class FilterActivity extends AppCompatActivity {
                         txtParams.addRule(RelativeLayout.RIGHT_OF, imageView.getId());
                         textView.setLayoutParams(txtParams);
 
-                        //textview 3
-//                        final TextView textView3 = new TextView(FilterActivity.this);
-//                        textView3.setText("ID: "+transID[i-1]);
-//                        textView3.setTextColor(Color.parseColor("#212121"));
-//                        textView3.setTextSize(12);
-//                        textView3.setTypeface(Typeface.SERIF);
-//                        textView3.setId(curTextViewId3);
-//                        final RelativeLayout.LayoutParams txtParams3 = new RelativeLayout.LayoutParams(
-//                                RelativeLayout.LayoutParams.WRAP_CONTENT,
-//                                RelativeLayout.LayoutParams.WRAP_CONTENT);
-//                        txtParams3.setMargins(0,0,0,valueInDp6);
-//                        txtParams3.addRule(RelativeLayout.BELOW, textView.getId());
-//                        txtParams3.addRule(RelativeLayout.RIGHT_OF, imageView.getId());
-//                        textView3.setLayoutParams(txtParams3);
-
-                        //textview 4
-                        final TextView textView4 = new TextView(FilterActivity.this);
-                        textView4.setText("DateTime: "+dateTime[i-1]);
-                        textView4.setTextColor(Color.parseColor("#212121"));
-                        textView4.setTextSize(12);
-                        textView4.setTypeface(Typeface.SERIF);
-                        textView4.setId(curTextViewId4);
+                        //textview 2 - transaction datetime
+                        final TextView textView2 = new TextView(FilterActivity.this);
+                        textView2.setText("DateTime: "+dateTime[i-1]);
+                        textView2.setTextColor(Color.parseColor("#212121"));
+                        textView2.setTextSize(12);
+                        textView2.setTypeface(Typeface.SERIF);
+                        textView2.setId(curTextViewId4);
                         final RelativeLayout.LayoutParams txtParams4 = new RelativeLayout.LayoutParams(
                                 RelativeLayout.LayoutParams.WRAP_CONTENT,
                                 RelativeLayout.LayoutParams.WRAP_CONTENT);
                         txtParams4.setMargins(0,0,0,valueInDp6);
                         txtParams4.addRule(RelativeLayout.BELOW, textView.getId());
                         txtParams4.addRule(RelativeLayout.RIGHT_OF, imageView.getId());
-                        textView4.setLayoutParams(txtParams4);
+                        textView2.setLayoutParams(txtParams4);
 
-                        //textview 5
-                        final TextView textView5 = new TextView(FilterActivity.this);
-                        textView5.setText("Verified: "+verified [i-1]);
-                        textView5.setTextColor(Color.parseColor("#00C853"));
-                        textView5.setTextSize(12);
-                        textView5.setTypeface(Typeface.SERIF);
-                        textView5.setId(curTextViewId5);
+                        //textview 3
+                        final TextView textView3 = new TextView(FilterActivity.this);
+                        textView3.setText("Verified: "+verified [i-1]);
+                        textView3.setTextColor(Color.parseColor("#00C853"));
+                        textView3.setTextSize(12);
+                        textView3.setTypeface(Typeface.SERIF);
+                        textView3.setId(curTextViewId5);
                         final RelativeLayout.LayoutParams txtParams5 = new RelativeLayout.LayoutParams(
                                 RelativeLayout.LayoutParams.WRAP_CONTENT,
                                 RelativeLayout.LayoutParams.WRAP_CONTENT);
-                        txtParams5.addRule(RelativeLayout.BELOW, textView4.getId());
+                        txtParams5.addRule(RelativeLayout.BELOW, textView2.getId());
                         txtParams5.addRule(RelativeLayout.RIGHT_OF, imageView.getId());
-                        textView5.setLayoutParams(txtParams5);
+                        textView3.setLayoutParams(txtParams5);
 
+                        // add UI elements into relativelayout
                         prevViewId = curImageViewId2;
                         relativeLayout2.addView(imageView);
                         relativeLayout2.addView(textView);
-                        //relativeLayout2.addView(textView2);
-                        //relativeLayout2.addView(textView3);
-                        relativeLayout2.addView(textView4);
-                        relativeLayout2.addView(textView5);
+                        relativeLayout2.addView(textView2);
+                        relativeLayout2.addView(textView3);
 
+                        // add relativelayout into scroll view
                         relativeLayout.addView(relativeLayout2);
                         if(i!=1) {
                             relativeLayout.addView(imageView2);
@@ -423,7 +398,10 @@ public class FilterActivity extends AppCompatActivity {
         @Override
         protected String[] doInBackground(JSONArray... downloadParams) {
             int readBytes;
+            //transaction array
             JSONArray filteredJson = downloadParams[0];
+
+            // define array length dynamically based on the transaction array length
             String path[]= new String[filteredJson.length()];
             unhashedData = new String[filteredJson.length()];
             encryptedHash = new String[filteredJson.length()];
@@ -433,6 +411,7 @@ public class FilterActivity extends AppCompatActivity {
             imgPaths = new String[filteredJson.length()];
             transID = new String[filteredJson.length()];
 
+            // loop the transaction array
             for(int j=0;j<filteredJson.length();j++) {
                 try {
                     unhashedData[j] = filteredJson.getJSONObject(j).getString("unhashedData");
@@ -442,7 +421,7 @@ public class FilterActivity extends AppCompatActivity {
                     dateTime [j] = msgArray.getJSONObject(j).getJSONObject("unhashedData").getString("currentDateTime");
                     location [j] = msgArray.getJSONObject(j).getJSONObject("unhashedData").getString("location");
 
-                    //open txt database
+                    // open textfile database (json)
                     // get location cert url and name
                     String txtContent = readRawTextFile(getApplicationContext(),R.raw.database);
                     JSONObject database = new JSONObject(txtContent);
@@ -455,7 +434,7 @@ public class FilterActivity extends AppCompatActivity {
                     Log.d("Url", locationJson.getString("CertUrl"));
                     Log.d("Name", locationJson.getString("Name"));
 
-                    //download operation 1
+                    //download operation 1 - for certificates
                     temp = getApplicationContext().getFilesDir() + "/" + locationName + ".pem";
                     temp.replaceAll("\\s", " ");
                     File certfile = new File(temp);
@@ -497,7 +476,7 @@ public class FilterActivity extends AppCompatActivity {
                         }
                     }
 
-                    //download operation 2
+                    //download operation 2 - for images
                     temp2 = getApplicationContext().getFilesDir() + "/" + locationName + ".png";
                     temp2.replaceAll("\\s", " ");
                     File certfile2 = new File(temp2);
@@ -547,6 +526,7 @@ public class FilterActivity extends AppCompatActivity {
         }
     }
 
+    // read string from text file
     public static String readRawTextFile(Context ctx, int resId)
     {
         InputStream inputStream = ctx.getResources().openRawResource(resId);
