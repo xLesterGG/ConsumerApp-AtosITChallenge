@@ -70,7 +70,7 @@ public class FilterActivity extends AppCompatActivity {
         setContentView(R.layout.activity_filter);
 
         // read the nxt url from text file
-        url = readRawTextFile(FilterActivity.this,R.raw.nxturl);
+        url = readRawTextFile(FilterActivity.this,R.raw.nxturl).replaceAll("\\s+","");
 
         // Get the Intent that started this activity and extract the string
         Intent intent = getIntent();
@@ -249,7 +249,7 @@ public class FilterActivity extends AppCompatActivity {
             int valueInDp6 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2, getResources().getDisplayMetrics());
 
             // if certs file paths are retrieved
-            if(result!=null){
+            if(result!=null && result.length!=0){
                 Log.d("Cert Result: ","Download/Get Certs successfully");
                 int prevViewId = 0;
                 verified =  new Boolean[result.length];
@@ -389,7 +389,7 @@ public class FilterActivity extends AppCompatActivity {
                     }
                 }
             }else{
-                Error.show();
+                Verification.show();
             }
 
             pDialog.dismiss();
