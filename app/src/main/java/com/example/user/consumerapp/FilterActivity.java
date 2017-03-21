@@ -84,7 +84,7 @@ public class FilterActivity extends AppCompatActivity {
 
         //initialize dialog 1 - connect to network for action
         AlertDialog.Builder builder = new AlertDialog.Builder(FilterActivity.this);
-        builder.setMessage("Please connect to network and try again")
+        builder.setMessage("No network available")
                 .setCancelable(false)
                 .setNegativeButton("Ok", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
@@ -217,8 +217,6 @@ public class FilterActivity extends AppCompatActivity {
                     }
                 }
         );
-
-
         queue.add(getRequest);
     }
 
@@ -279,6 +277,7 @@ public class FilterActivity extends AppCompatActivity {
                     //if one of the location is not verified, set notVerified to true
                     if(verified [i - 1]==false) {
                         notVerified = true;
+                        Verification.show();
                     }
 
                     // if all locations are verified
@@ -384,8 +383,6 @@ public class FilterActivity extends AppCompatActivity {
                         if(i!=1) {
                             relativeLayout.addView(imageView2);
                         }
-                    } else{
-                        Verification.show();
                     }
                 }
             }else{
@@ -471,6 +468,7 @@ public class FilterActivity extends AppCompatActivity {
                                 Log.d("path created?", path[1]);
                             }
                         } catch (Exception e) {
+                            pDialog.dismiss();
                             Error.show();
                             Log.d("Error", e.getMessage());
                         }
@@ -514,10 +512,12 @@ public class FilterActivity extends AppCompatActivity {
                             }
                         } catch (Exception e) {
                             Log.d("Error", e.getMessage());
+                            pDialog.dismiss();
                             Error.show();
                         }
                     }
                 } catch (JSONException e) {
+                    pDialog.dismiss();
                     Error.show();
                     e.printStackTrace();
                 }

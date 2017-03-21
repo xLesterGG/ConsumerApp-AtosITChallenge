@@ -20,12 +20,14 @@ import javax.crypto.Cipher;
 public class VerifyHash {
     final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
+    // decrypt the encrypted hash
     public String DecryptHash(PublicKey key, String encodedEncryptedHash)throws Exception{
         byte[] encryptedHash = hexStringToByteArray(encodedEncryptedHash);
         String decryptedHash = decrypt(encryptedHash,key);
         return decryptedHash;
     }
 
+    // read pem file into X509 cert and get public key
     public PublicKey ReadPemFile(String path) throws Exception {
 
         PEMReader reader = new PEMReader(new FileReader(path));
@@ -41,6 +43,7 @@ public class VerifyHash {
 
     }
 
+    // hash a string
     public String hashStringWithSHA(String json) throws Exception{
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         md.update(json.getBytes("UTF-8"));
@@ -55,6 +58,8 @@ public class VerifyHash {
 
         return sb.toString();
     }
+
+    // compare two hash in string
     public Boolean CompareHash(String original,String rehash){
         if(original.equals(rehash)){
             return true;
@@ -62,6 +67,7 @@ public class VerifyHash {
         return false;
     }
 
+    // decrypt encrypted bytes
     public String decrypt(byte[]text,Key key) throws Exception{
         byte[] decryptedText = null;
         try {
@@ -79,6 +85,7 @@ public class VerifyHash {
         return new String(decryptedText,"UTF-8");
     }
 
+    // convert string to byte array
     public byte[] hexStringToByteArray(String s) {
         int len = s.length();
         byte[] data = new byte[len / 2];
