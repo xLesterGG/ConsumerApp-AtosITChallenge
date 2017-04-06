@@ -79,18 +79,19 @@ public class MainActivity extends AppCompatActivity {
                 JSONObject qrData = new JSONObject(scanResult.getContents());
                 // check if qr valid
                 // format of qr data (nxtAccNum,batchID,productName)
-                if (qrData.has("nxtAccNum") && qrData.has("batchID") && qrData.has("productName")) {
+                if (qrData.has("nxtAccNum") && qrData.has("batchID") && qrData.has("productName") && qrData.has("Quantity")) {
                     String nxtAccNum = qrData.getString("nxtAccNum");
                     String batchID = qrData.getString("batchID");
                     String productName = qrData.getString("productName");
-
+                    int quantity = qrData.getInt("Quantity");
                     Intent intent = new Intent(this, FilterActivity.class);
                     intent.putExtra("productName",productName);
                     intent.putExtra("nxtAccNum",nxtAccNum);
                     intent.putExtra("batchID",batchID);
+                    intent.putExtra("Quantity",quantity);
                     startActivity(intent);
                 } else {
-                    Toast.makeText(MainActivity.this, "Not a Valid FoodChain™ QR , please try again", Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, "Not a Valid FoodChain™ Product QR , please try again", Toast.LENGTH_LONG).show();
                 }
 
             } catch (Exception e) {

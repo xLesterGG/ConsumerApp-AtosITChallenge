@@ -49,6 +49,7 @@ import java.security.PublicKey;
 
 public class FilterActivity extends AppCompatActivity {
     String batchID,nxtAccNum,productName;
+    int quantity;
     JSONArray msgArray;
     RelativeLayout relativeLayout;
     RequestQueue queue;
@@ -77,6 +78,7 @@ public class FilterActivity extends AppCompatActivity {
         nxtAccNum = intent.getStringExtra("nxtAccNum");
         productName = intent.getStringExtra("productName");
         batchID = intent.getStringExtra("batchID");
+        quantity = intent.getIntExtra("Quantity",0);
         pDialog = new ProgressDialog(FilterActivity.this);
 
         relativeLayout = (RelativeLayout) findViewById(R.id.activity_filter);
