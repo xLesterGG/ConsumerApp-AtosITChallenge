@@ -68,6 +68,9 @@ public class FilterActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setLogo(R.mipmap.ic_launcher);
+        getSupportActionBar().setDisplayUseLogoEnabled(true);
         setContentView(R.layout.activity_filter);
 
         // read the nxt url from text file
@@ -362,7 +365,7 @@ public class FilterActivity extends AppCompatActivity {
                         //textview 3
                         final TextView textView3 = new TextView(FilterActivity.this);
                         textView3.setText("Verified: "+verified [i-1]);
-                        textView3.setTextColor(Color.parseColor("#00C853"));
+                        textView3.setTextColor(Color.parseColor("#2E7D32"));
                         textView3.setTextSize(12);
                         textView3.setTypeface(Typeface.SERIF);
                         textView3.setId(curTextViewId5);
