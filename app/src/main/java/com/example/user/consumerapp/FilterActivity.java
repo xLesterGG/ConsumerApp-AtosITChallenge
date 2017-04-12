@@ -151,20 +151,25 @@ public class FilterActivity extends AppCompatActivity {
 
                             for(int i=0;i<transactionArray.length();i++){
                                 if(transactionArray.getJSONObject(i).getJSONObject("attachment").has("message")){
+//                                    Log.d("checking for 3", String.valueOf(i) );
 
                                     String arr[] = new String[4];
 
                                     JSONObject hash3 = new JSONObject(transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message")); // stringed json
                                     if(hash3.has("batchID") && hash3.getString("batchID").equalsIgnoreCase(batchID) && hash3.has("encryptedHash3"))
                                     {
+//                                        Log.d("i value", String.valueOf(i) +"   "+ new JSONObject(transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message")) );
+
                                         String h3 = hash3.getString("encryptedHash3");
 
                                         arr[3] = transactionArray.getJSONObject(i).getString("transaction");
                                         i = i+1;
 
                                         JSONObject hash2 = new JSONObject(transactionArray.getJSONObject(i).getJSONObject("attachment").getString("message"));
+
                                         if(hash2.has("batchID") && hash2.getString("batchID").equalsIgnoreCase(batchID) && hash2.has("encryptedHash2"))
                                         {
+
                                             String h2 = hash2.getString("encryptedHash2");
                                             arr[2] = transactionArray.getJSONObject(i).getString("transaction");
                                             i = i+1;
@@ -173,6 +178,7 @@ public class FilterActivity extends AppCompatActivity {
 
                                             if(hash1.has("batchID") && hash1.getString("batchID").equalsIgnoreCase(batchID) && hash1.has("encryptedHash1"))
                                             {
+
                                                 String h1 = hash1.getString("encryptedHash1");
                                                 arr[1] = transactionArray.getJSONObject(i).getString("transaction");
                                                 i = i+1;
@@ -181,6 +187,7 @@ public class FilterActivity extends AppCompatActivity {
 
                                                 if(message.has("batchID") && message.getString("batchID").equalsIgnoreCase(batchID))
                                                 {
+
                                                     arr[0] = transactionArray.getJSONObject(i).getString("transaction");
                                                     message.put("unhashedData",new JSONObject(message.getString("unhashedData"))); // turn string into json
                                                     message.put("encryptedHash",h1+h2+h3);            // concat the hash
@@ -194,8 +201,16 @@ public class FilterActivity extends AppCompatActivity {
                                                     Log.d("all",message.toString());
                                                     msgArray.put(message);  // add processed message into an array
                                                 }
+                                                else{
+                                                    i = i-1; // decrement count if hash not in order and check next index
+                                                }
+                                            }else{
+                                                i = i-1; // decrement count if hash not in order and check next index
                                             }
+                                        }else{
+                                            i = i-1; // decrement count if hash not in order and check next index
                                         }
+
                                     }
                                 }
                             }
