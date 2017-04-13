@@ -80,6 +80,7 @@ public class VerifyHash {
 
         } catch (Exception ex) {
             ex.printStackTrace();
+            return new String("Verification Failed");
         }
 
         return new String(decryptedText,"UTF-8");
