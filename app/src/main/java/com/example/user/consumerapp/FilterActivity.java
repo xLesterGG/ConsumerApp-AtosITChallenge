@@ -56,14 +56,15 @@ public class FilterActivity extends AppCompatActivity {
 
     String url;
 
-    public static AlertDialog ConnectionAlert=null;
-    public static AlertDialog Error =null;
-    public static AlertDialog Verification =null;
+    public static AlertDialog ConnectionAlert;
+    public static AlertDialog Error;
+    public static AlertDialog Verification;
 
     private ProgressDialog pDialog;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler(this));
         getSupportActionBar().setDisplayShowHomeEnabled(true);
         getSupportActionBar().setLogo(R.mipmap.ic_launcher);
         getSupportActionBar().setDisplayUseLogoEnabled(true);
@@ -143,6 +144,7 @@ public class FilterActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(JSONObject response) {
                         try{
+                            Log.d("aa",response.getJSONArray("transactions").toString());
                             JSONArray transactionArray = response.getJSONArray("transactions");  // extract transactions
                             msgArray = new JSONArray();
 
@@ -211,16 +213,13 @@ public class FilterActivity extends AppCompatActivity {
                                     }
                                 }
                             }
-
+                            Log.d("asdasd",msgArray.toString());
                             // download certfile and verify
                             DownloadFile dl = new DownloadFile();
                             dl.execute(msgArray);
-                            Log.d("asdasd",msgArray.toString());
 
                         }catch (Exception e){
                             e.printStackTrace();
-                            pDialog.dismiss();
-                            Error.show();
                         }
                     }
                 },
@@ -229,8 +228,6 @@ public class FilterActivity extends AppCompatActivity {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         Log.d("Error.Response", error.toString());
-                        pDialog.dismiss();
-                        Error.show();
                     }
                 }
         );
@@ -246,13 +243,18 @@ public class FilterActivity extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
+            Log.d("execute","execute");
             pDialog.setMessage("Processing...");
         }
 
         @Override
         protected void onPostExecute(String[] result){
             //Boolean notVerified = false;
-            File cert= null;
+            File cert;
+            VerifyHash vh = new VerifyHash();
+            PublicKey key;
+            String decryptedhash;
+            String rehash;
 
             // get values in dp
             int valueInDp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 170, getResources().getDisplayMetrics());
@@ -264,34 +266,31 @@ public class FilterActivity extends AppCompatActivity {
 
             // if public certs file paths are retrieved
             if(result!=null && result.length!=0){
-                Log.d("Cert Result: ","Download/Get Certs successfully");
+                Log.d("Result: ",result.toString());
                 int prevViewId = 0;
-                verified =  new Boolean[result.length];
 
                 // verify each of the locations
                 for(int i=result.length;i>0;i--) {
                     cert = new File(result[i - 1]);
 
-                    //verify hash
-                    VerifyHash vh = new VerifyHash();
-                    PublicKey key;
-                    String decryptedhash = null;
-                    String rehash = null;
-
-                    try {
-                        key = vh.ReadPemFile(cert.toString());
-                        decryptedhash = vh.DecryptHash(key, encryptedHash[i - 1]);
-                        rehash = vh.hashStringWithSHA(unhashedData[i - 1]);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                    // if people try to fake using their own keys
-                    // decryption fail, not verified
-                    if(decryptedhash.equalsIgnoreCase("Verification Failed")){
+                    if(result[i-1].equals("error")){
                         verified[i - 1] = false;
                     }else{
-                        verified[i - 1] = vh.CompareHash(decryptedhash, rehash);
+                        try {
+                            key = vh.ReadPemFile(cert.toString());
+                            decryptedhash = vh.DecryptHash(key, encryptedHash[i - 1]);
+                            rehash = vh.hashStringWithSHA(unhashedData[i - 1]);
+
+                            // if people try to fake using their own keys
+                            // decryption fail, not verified
+                            if(decryptedhash.equalsIgnoreCase("Verification Failed")){
+                                verified[i - 1] = false;
+                            }else{
+                                verified[i - 1] = vh.CompareHash(decryptedhash, rehash);
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
 
@@ -327,8 +326,10 @@ public class FilterActivity extends AppCompatActivity {
 
                     Bitmap bitmap;
                     bitmap = BitmapFactory.decodeFile(imgPaths[i-1]);
-                    Bitmap bmp = Bitmap.createScaledBitmap(bitmap, valueInDp, valueInDp, false);
-                    imageView.setImageBitmap(bmp);
+                    if(bitmap!=null){
+                        Bitmap bmp = Bitmap.createScaledBitmap(bitmap, valueInDp, valueInDp, false);
+                        imageView.setImageBitmap(bmp);
+                    }
 
                     //imageview 2 - arrow
                     ImageView imageView2 = new ImageView(FilterActivity.this);
@@ -373,10 +374,12 @@ public class FilterActivity extends AppCompatActivity {
                     //textview 3
                     final TextView textView3 = new TextView(FilterActivity.this);
                     textView3.setText("Verified: "+verified [i-1]);
-                    if(verified [i-1]==true){
-                        textView3.setTextColor(Color.parseColor("#2E7D32"));
-                    }else{
-                        textView3.setTextColor(Color.parseColor("#C62828"));
+                    if(verified [i-1]!=null){
+                        if(verified[i-1]){
+                            textView3.setTextColor(Color.parseColor("#2E7D32"));
+                        }else{
+                            textView3.setTextColor(Color.parseColor("#C62828"));
+                        }
                     }
                     textView3.setTextSize(12);
                     textView3.setTypeface(Typeface.SERIF);
@@ -401,10 +404,9 @@ public class FilterActivity extends AppCompatActivity {
                         relativeLayout.addView(imageView2);
                     }
                 }
-            }else{
+            } else{
                 Verification.show();
             }
-
             pDialog.dismiss();
         }
 
@@ -413,6 +415,7 @@ public class FilterActivity extends AppCompatActivity {
             int readBytes;
             //transaction array
             JSONArray filteredJson = downloadParams[0];
+            Log.d("msgArray?",filteredJson.toString());
 
             // define array length dynamically based on the transaction array length
             String path[]= new String[filteredJson.length()];
@@ -423,6 +426,7 @@ public class FilterActivity extends AppCompatActivity {
             dateTime = new String[filteredJson.length()];
             imgPaths = new String[filteredJson.length()];
             transID = new String[filteredJson.length()];
+            verified =  new Boolean[filteredJson.length()];
 
             // loop the transaction array
             for(int j=0;j<filteredJson.length();j++) {
@@ -481,8 +485,6 @@ public class FilterActivity extends AppCompatActivity {
                                 Log.d("path created?", path[1]);
                             }
                         } catch (Exception e) {
-                            pDialog.dismiss();
-                            Error.show();
                             Log.d("Error", e.getMessage());
                         }
                     }
@@ -525,13 +527,9 @@ public class FilterActivity extends AppCompatActivity {
                             }
                         } catch (Exception e) {
                             Log.d("Error", e.getMessage());
-                            pDialog.dismiss();
-                            Error.show();
                         }
                     }
-                } catch (JSONException e) {
-                    pDialog.dismiss();
-                    Error.show();
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
